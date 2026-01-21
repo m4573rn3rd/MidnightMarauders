@@ -71,3 +71,13 @@ qFrame:SetScript("OnEvent", function(self, event, questID, xpReward, moneyReward
     print("|cFF00FF00[MidnightMarauders]|r: Quest Complete! Rewards: " .. GetCoinTextureString(moneyReward))
     addonTable.QuestLog:UpdateHUD()
 end)
+
+-- 5. Slash Command
+SLASH_MHUD1 = "/mhud"
+SlashCmdList["MHUD"] = function()
+    if addonTable.QuestLog.hud and addonTable.QuestLog.hud:IsShown() then
+        addonTable.QuestLog.hud:Hide()
+    elseif addonTable.QuestLog.hud then
+        addonTable.QuestLog.hud:Show()
+    end
+end

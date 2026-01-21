@@ -29,7 +29,8 @@ MidnightMarauders is a comprehensive World of Warcraft addon for tracking person
 
 -   `/mstart` - Manually starts the combat tracker.
 -   `/mstop` - Manually stops the combat tracker.
--   `/mguild` - Toggles the display of the Guild Contribution UI.
+-   `/mm` - Toggles the display of the Guild Contribution UI.
+-   `/mhud` - Toggles the display of the Quest HUD.
 
 ## Installation
 

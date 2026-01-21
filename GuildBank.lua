@@ -7,6 +7,9 @@ function addonTable.GuildTracker:Initialize()
     if not MidnightMaraudersDB.guildContributions then
         MidnightMaraudersDB.guildContributions = { totalGold = 0, history = {} }
     end
+    if not MidnightMaraudersDB.combatHistory then
+        MidnightMaraudersDB.combatHistory = {}
+    end
 end
 
 -- 2. Log the Deposit
@@ -50,6 +53,8 @@ end
 -- 4. Create the Main Window with Tabs
 function addonTable.GuildTracker:CreateUI()
     if self.frame then return end
+    
+    LoadAddOn("Blizzard_CharacterFrame")
 
     -- Main Frame
     local f = CreateFrame("Frame", "MidnightMaraudersMainUI", UIParent, "BasicFrameTemplateWithInset")
@@ -89,10 +94,21 @@ function addonTable.GuildTracker:CreateUI()
     f.historyPanel:SetAllPoints()
     f.historyPanel.title = f.historyPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     f.historyPanel.title:SetPoint("TOP", f, "TOP", 0, -40)
-    f.historyPanel.title:SetText("Combat Performance")
-    f.historyPanel.text = f.historyPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    f.historyPanel.text:SetPoint("TOP", 0, -100)
-    f.historyPanel.text:SetText("Detailed combat logs will appear here.")
+    f.historyPanel.title:SetText("Combat History")
+    
+    f.historyPanel.scroll = CreateFrame("ScrollFrame", nil, f.historyPanel, "UIPanelScrollFrameTemplate")
+    f.historyPanel.scroll:SetPoint("TOPLEFT", 10, -70)
+    f.historyPanel.scroll:SetPoint("BOTTOMRIGHT", -30, 40)
+    
+    f.historyPanel.content = CreateFrame("Frame", nil, f.historyPanel.scroll)
+    f.historyPanel.content:SetSize(360, 1)
+    f.historyPanel.scroll:SetScrollChild(f.historyPanel.content)
+    
+    f.historyPanel.text = f.historyPanel.content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    f.historyPanel.text:SetPoint("TOPLEFT", 5, -5)
+    f.historyPanel.text:SetJustifyH("LEFT")
+    f.historyPanel.text:SetWidth(350)
+    
     f.historyPanel:Hide()
 
     -- QUEST PANEL (Tab 3)
@@ -100,10 +116,21 @@ function addonTable.GuildTracker:CreateUI()
     f.questPanel:SetAllPoints()
     f.questPanel.title = f.questPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     f.questPanel.title:SetPoint("TOP", f, "TOP", 0, -40)
-    f.questPanel.title:SetText("Quest Telemetry")
-    f.questPanel.text = f.questPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    f.questPanel.text:SetPoint("TOP", 0, -100)
-    f.questPanel.text:SetText("Quest progress tracking active.")
+    f.questPanel.title:SetText("Quest Log")
+    
+    f.questPanel.scroll = CreateFrame("ScrollFrame", nil, f.questPanel, "UIPanelScrollFrameTemplate")
+    f.questPanel.scroll:SetPoint("TOPLEFT", 10, -70)
+    f.questPanel.scroll:SetPoint("BOTTOMRIGHT", -30, 40)
+    
+    f.questPanel.content = CreateFrame("Frame", nil, f.questPanel.scroll)
+    f.questPanel.content:SetSize(360, 1)
+    f.questPanel.scroll:SetScrollChild(f.questPanel.content)
+    
+    f.questPanel.text = f.questPanel.content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    f.questPanel.text:SetPoint("TOPLEFT", 5, -5)
+    f.questPanel.text:SetJustifyH("LEFT")
+    f.questPanel.text:SetWidth(350)
+    
     f.questPanel:Hide()
 
     -- TAB SYSTEM
@@ -149,21 +176,46 @@ function addonTable.GuildTracker:UpdateUI()
     end
     self.frame.guildPanel.text:SetText(historyStr)
     
-    -- Update Quest Data (If QuestLog exists)
-    if addonTable.QuestLog and addonTable.QuestLog.UpdateHUD then
-        local qData = MidnightMaraudersDB.questData
-        if qData then
-            self.frame.questPanel.text:SetText(string.format(
-                "Quests Today: %d\nTotal Quests Done: %d", 
-                qData.completedToday, qData.totalCompleted
-            ))
+    -- Update History Data
+    if MidnightMaraudersDB.combatHistory then
+        local historyStr = ""
+        if #MidnightMaraudersDB.combatHistory == 0 then
+            historyStr = "No combat history found."
+        else
+            for i = #MidnightMaraudersDB.combatHistory, 1, -1 do
+                local entry = MidnightMaraudersDB.combatHistory[i]
+                historyStr = historyStr .. string.format("|cFFFFFF00%s|r (|cFF00FF00%.1fs|r)\n", entry.encounterName, entry.duration)
+                for _, player in ipairs(entry.players) do
+                    historyStr = historyStr .. string.format("  %s: %d DPS\n", player.name, player.dps)
+                end
+                historyStr = historyStr .. "\n"
+            end
         end
+        self.frame.historyPanel.text:SetText(historyStr)
+    end
+    
+    -- Update Quest Data
+    if addonTable.QuestLog then
+        local questLogStr = ""
+        local numQuests = C_QuestLog.GetNumQuestLogEntries()
+        if numQuests == 0 then
+            questLogStr = "Quest log is empty."
+        else
+            for i=1, numQuests do
+                local questInfo = C_QuestLog.GetInfo(i)
+                if questInfo then
+                    local color = questInfo.isGroup and "|cFFFF0000" or "|cFFFFFF00"
+                    questLogStr = questLogStr .. string.format("%s[%d] %s|r\n", color, questInfo.level, questInfo.title)
+                end
+            end
+        end
+        self.frame.questPanel.text:SetText(questLogStr)
     end
 end
 
 -- 6. Slash Command Setup
-SLASH_MGUILD1 = "/mguild"
-SlashCmdList["MGUILD"] = function()
+SLASH_MM1 = "/mm"
+SlashCmdList["MM"] = function()
     addonTable.GuildTracker:CreateUI()
     if addonTable.GuildTracker.frame:IsShown() then
         addonTable.GuildTracker.frame:Hide()
