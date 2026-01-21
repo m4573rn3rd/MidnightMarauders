@@ -1,0 +1,15 @@
+## Interface: 110007
+## Title: |cFF00FF00MidnightMarauders|r
+## Notes: Combat, Market, Fishing, and Guild Telemetry for Brandon McClain.
+## Author: Brandon McClain
+## Version: 1.0
+## SavedVariables: MidnightMaraudersDB
+
+# Logic and Data Modules
+Tracker.lua
+QuestTracker.lua
+TooltipScanner.lua
+GuildBank.lua
+
+# Main Engine (Loads Last)
+Core.lua

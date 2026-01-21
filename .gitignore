@@ -1,0 +1,9 @@
+# Ignore backup files
+*.bak
+*.tmp
+*.log
+
+# Ignore compressed files
+*.zip
+*.rar
+*.7z
